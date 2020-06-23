@@ -37,6 +37,10 @@ import org.springframework.lang.Nullable;
  * @since 1.1
  * @see org.springframework.core.io.Resource
  */
+/*
+	org.springframework.beans.factory.support.BeanDefinitionReader的作用是读取 Spring 的配置文件的内容，
+	并将其转换成 Ioc 容器内部的数据结构 ：BeanDefinition 。
+ */
 public interface BeanDefinitionReader {
 
 	/**

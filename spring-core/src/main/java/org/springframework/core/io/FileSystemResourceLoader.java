@@ -48,9 +48,11 @@ public class FileSystemResourceLoader extends DefaultResourceLoader {
 	 */
 	@Override
 	protected Resource getResourceByPath(String path) {
+		// 截取首 /
 		if (path.startsWith("/")) {
 			path = path.substring(1);
 		}
+		// 创建 FileSystemContextResource 类型的资源
 		return new FileSystemContextResource(path);
 	}
 
@@ -58,6 +60,10 @@ public class FileSystemResourceLoader extends DefaultResourceLoader {
 	/**
 	 * FileSystemResource that explicitly expresses a context-relative path
 	 * through implementing the ContextResource interface.
+	 */
+	/*
+		FileSystemContextResource，为FileSystemResourceLoader的内部类，它继承FileSystemResource类，
+		实现 ContextResource 接口。
 	 */
 	private static class FileSystemContextResource extends FileSystemResource implements ContextResource {
 

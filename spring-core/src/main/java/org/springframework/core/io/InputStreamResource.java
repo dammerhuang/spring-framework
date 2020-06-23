@@ -42,6 +42,7 @@ import org.springframework.util.Assert;
  * @see FileSystemResource
  * @see UrlResource
  */
+// 将给定的InputStream作为一种资源 的Resource的实现类。
 public class InputStreamResource extends AbstractResource {
 
 	private final InputStream inputStream;

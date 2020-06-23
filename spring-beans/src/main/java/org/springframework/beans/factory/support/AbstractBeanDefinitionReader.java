@@ -210,13 +210,18 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	 * @see #loadBeanDefinitions(org.springframework.core.io.Resource)
 	 * @see #loadBeanDefinitions(org.springframework.core.io.Resource[])
 	 */
+	/*
+		这个方法是最重要的方法：根据特定资源的位置来加载bean definiton
+	 */
 	public int loadBeanDefinitions(String location, @Nullable Set<Resource> actualResources) throws BeanDefinitionStoreException {
+		// resourceLoader要不是从registry转换而来，要不就是PathMatchingResourcePatternResolver对象
 		ResourceLoader resourceLoader = getResourceLoader();
+		// 有set方法就有可能为空
 		if (resourceLoader == null) {
 			throw new BeanDefinitionStoreException(
 					"Cannot load bean definitions from location [" + location + "]: no ResourceLoader available");
 		}
-
+		// 不同的资源加载器能对同一个location加载出不一样的资源（Resource）出来
 		if (resourceLoader instanceof ResourcePatternResolver) {
 			// Resource pattern matching available.
 			try {

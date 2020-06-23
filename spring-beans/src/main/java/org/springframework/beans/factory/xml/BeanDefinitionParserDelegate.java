@@ -305,6 +305,7 @@ public class BeanDefinitionParserDelegate {
 	 * @see #getDefaults()
 	 */
 	public void initDefaults(Element root, @Nullable BeanDefinitionParserDelegate parent) {
+		// 这个方法是给this.defaults填充属性值
 		populateDefaults(this.defaults, (parent != null ? parent.defaults : null), root);
 		this.readerContext.fireDefaultsRegistered(this.defaults);
 	}
@@ -329,24 +330,38 @@ public class BeanDefinitionParserDelegate {
 		String merge = root.getAttribute(DEFAULT_MERGE_ATTRIBUTE);
 		if (isDefaultValue(merge)) {
 			// Potentially inherited from outer <beans> sections, otherwise falling back to false.
+			// 如果该beans的default-merge的值是default或者""且该beans有外层beans，即父beans，就获取父beans的default-merge的值，否则直接复制为false
 			merge = (parentDefaults != null ? parentDefaults.getMerge() : FALSE_VALUE);
 		}
 		defaults.setMerge(merge);
 
+		// 这里跟上面是一样的逻辑，这里不再赘述
+		/*
+			关于default-autowire和autowire的用法，请看下面博文：
+			https://blog.csdn.net/oskyhg/article/details/53577196
+		 */
 		String autowire = root.getAttribute(DEFAULT_AUTOWIRE_ATTRIBUTE);
 		if (isDefaultValue(autowire)) {
 			// Potentially inherited from outer <beans> sections, otherwise falling back to 'no'.
-			autowire = (parentDefaults != null ? parentDefaults.getAutowire() : AUTOWIRE_NO_VALUE);
+			// "no"代表不使用autowiring。 必须显示的使用标签明确地指定bean。
+			autowire = (parentDefaults != null ? parentDefaults.getAutowire () : AUTOWIRE_NO_VALUE);
 		}
 		defaults.setAutowire(autowire);
 
+		/*
+			default-autowire-candidates的作用，请看以下博文:
+			https://blog.csdn.net/likun557/article/details/104438417
+		 */
+		// 如果beans有default-autowire-candidates这个属性，则将该属性的值设置进去
 		if (root.hasAttribute(DEFAULT_AUTOWIRE_CANDIDATES_ATTRIBUTE)) {
 			defaults.setAutowireCandidates(root.getAttribute(DEFAULT_AUTOWIRE_CANDIDATES_ATTRIBUTE));
 		}
+		// 如果beans没有default-autowire-candidates这个属性，则获取父beans该属性的值
 		else if (parentDefaults != null) {
 			defaults.setAutowireCandidates(parentDefaults.getAutowireCandidates());
 		}
 
+		// default-init-method：配置全局的初始化方法
 		if (root.hasAttribute(DEFAULT_INIT_METHOD_ATTRIBUTE)) {
 			defaults.setInitMethod(root.getAttribute(DEFAULT_INIT_METHOD_ATTRIBUTE));
 		}
@@ -354,6 +369,7 @@ public class BeanDefinitionParserDelegate {
 			defaults.setInitMethod(parentDefaults.getInitMethod());
 		}
 
+		// default-destroy-method:配置全局的销毁方法
 		if (root.hasAttribute(DEFAULT_DESTROY_METHOD_ATTRIBUTE)) {
 			defaults.setDestroyMethod(root.getAttribute(DEFAULT_DESTROY_METHOD_ATTRIBUTE));
 		}

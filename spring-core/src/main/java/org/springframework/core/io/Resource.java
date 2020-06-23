@@ -49,6 +49,14 @@ import org.springframework.lang.Nullable;
  * @see ByteArrayResource
  * @see InputStreamResource
  */
+/*
+	org.springframework.core.io.Resource : 对资源的抽象，它的每一个实现类都代表了一种资源的访问策略，
+	如 ClassPathResource、RLResource、FileSystemResource 等
+
+	org.springframework.core.io.Resource 为 Spring 框架所有资源的抽象和访问接口，
+	它继承 org.springframework.core.io.InputStreamSource接口。
+	作为所有资源的统一抽象，Resource 定义了一些通用的方法，由子类 AbstractResource 提供统一的默认实现
+ */
 public interface Resource extends InputStreamSource {
 
 	/**
@@ -57,6 +65,7 @@ public interface Resource extends InputStreamSource {
 	 * existence of a {@code Resource} handle only guarantees a valid
 	 * descriptor handle.
 	 */
+	// 资源是否存在
 	boolean exists();
 
 	/**
@@ -70,6 +79,7 @@ public interface Resource extends InputStreamSource {
 	 * @see #getInputStream()
 	 * @see #exists()
 	 */
+	// 资源是否可读
 	default boolean isReadable() {
 		return exists();
 	}
@@ -80,6 +90,7 @@ public interface Resource extends InputStreamSource {
 	 * and must be read and closed to avoid resource leaks.
 	 * <p>Will be {@code false} for typical resource descriptors.
 	 */
+	// 资源所代表的句柄是否被一个 stream 打开了
 	default boolean isOpen() {
 		return false;
 	}
@@ -92,6 +103,7 @@ public interface Resource extends InputStreamSource {
 	 * @since 5.0
 	 * @see #getFile()
 	 */
+	// 是否为 File
 	default boolean isFile() {
 		return false;
 	}
@@ -101,6 +113,7 @@ public interface Resource extends InputStreamSource {
 	 * @throws IOException if the resource cannot be resolved as URL,
 	 * i.e. if the resource is not available as descriptor
 	 */
+	// 返回资源的 URL 的句柄
 	URL getURL() throws IOException;
 
 	/**
@@ -109,6 +122,7 @@ public interface Resource extends InputStreamSource {
 	 * i.e. if the resource is not available as descriptor
 	 * @since 2.5
 	 */
+	// 返回资源的 URI 的句柄
 	URI getURI() throws IOException;
 
 	/**
@@ -118,6 +132,7 @@ public interface Resource extends InputStreamSource {
 	 * @throws IOException in case of general resolution/reading failures
 	 * @see #getInputStream()
 	 */
+	// 返回资源的 File 的句柄
 	File getFile() throws IOException;
 
 	/**
@@ -131,6 +146,7 @@ public interface Resource extends InputStreamSource {
 	 * @since 5.0
 	 * @see #getInputStream()
 	 */
+	// 返回 ReadableByteChannel
 	default ReadableByteChannel readableChannel() throws IOException {
 		return Channels.newChannel(getInputStream());
 	}
@@ -140,6 +156,7 @@ public interface Resource extends InputStreamSource {
 	 * @throws IOException if the resource cannot be resolved
 	 * (in the file system or as some other known physical resource type)
 	 */
+	// 资源内容的长度
 	long contentLength() throws IOException;
 
 	/**
@@ -147,6 +164,7 @@ public interface Resource extends InputStreamSource {
 	 * @throws IOException if the resource cannot be resolved
 	 * (in the file system or as some other known physical resource type)
 	 */
+	// 资源最后的修改时间
 	long lastModified() throws IOException;
 
 	/**
@@ -155,6 +173,7 @@ public interface Resource extends InputStreamSource {
 	 * @return the resource handle for the relative resource
 	 * @throws IOException if the relative resource cannot be determined
 	 */
+	// 根据资源的相对路径创建新资源
 	Resource createRelative(String relativePath) throws IOException;
 
 	/**
@@ -163,6 +182,7 @@ public interface Resource extends InputStreamSource {
 	 * <p>Returns {@code null} if this type of resource does not
 	 * have a filename.
 	 */
+	//  资源的文件名
 	@Nullable
 	String getFilename();
 
@@ -173,6 +193,7 @@ public interface Resource extends InputStreamSource {
 	 * from their {@code toString} method.
 	 * @see Object#toString()
 	 */
+	// 资源的描述
 	String getDescription();
 
 }
