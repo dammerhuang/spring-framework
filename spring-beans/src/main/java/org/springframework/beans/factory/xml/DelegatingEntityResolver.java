@@ -36,6 +36,12 @@ import org.springframework.util.Assert;
  * @see BeansDtdResolver
  * @see PluggableSchemaResolver
  */
+
+/**
+ * 实现 EntityResolver 接口，分别代理 dtd 的 BeansDtdResolver 和 xml schemas 的 PluggableSchemaResolver 。
+ * EntityResolver 的作用就是，通过实现它，应用可以自定义如何寻找【验证文件】的逻辑。
+ * @author fighterfish
+ */
 public class DelegatingEntityResolver implements EntityResolver {
 
 	/** Suffix for DTD files. */
@@ -58,6 +64,7 @@ public class DelegatingEntityResolver implements EntityResolver {
 	 * @param classLoader the ClassLoader to use for loading
 	 * (can be {@code null}) to use the default ClassLoader)
 	 */
+	// 默认
 	public DelegatingEntityResolver(@Nullable ClassLoader classLoader) {
 		this.dtdResolver = new BeansDtdResolver();
 		this.schemaResolver = new PluggableSchemaResolver(classLoader);
@@ -69,6 +76,7 @@ public class DelegatingEntityResolver implements EntityResolver {
 	 * @param dtdResolver the EntityResolver to resolve DTDs with
 	 * @param schemaResolver the EntityResolver to resolve XML schemas with
 	 */
+	// 自定义
 	public DelegatingEntityResolver(EntityResolver dtdResolver, EntityResolver schemaResolver) {
 		Assert.notNull(dtdResolver, "'dtdResolver' is required");
 		Assert.notNull(schemaResolver, "'schemaResolver' is required");
@@ -77,15 +85,26 @@ public class DelegatingEntityResolver implements EntityResolver {
 	}
 
 
+	/**
+	 * 如果是 DTD 验证模式，则使用 BeansDtdResolver 来进行解析
+	 * 如果是 XSD 验证模式，则使用 PluggableSchemaResolver 来进行解析。
+	 * @param publicId
+	 * @param systemId
+	 * @return
+	 * @throws SAXException
+	 * @throws IOException
+	 */
 	@Override
 	@Nullable
 	public InputSource resolveEntity(@Nullable String publicId, @Nullable String systemId)
 			throws SAXException, IOException {
 
 		if (systemId != null) {
+			// DTD 模式
 			if (systemId.endsWith(DTD_SUFFIX)) {
 				return this.dtdResolver.resolveEntity(publicId, systemId);
 			}
+			// XSD 模式
 			else if (systemId.endsWith(XSD_SUFFIX)) {
 				return this.schemaResolver.resolveEntity(publicId, systemId);
 			}

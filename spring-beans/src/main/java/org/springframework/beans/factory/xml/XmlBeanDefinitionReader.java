@@ -81,27 +81,34 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	/**
 	 * Indicates that the validation should be disabled.
 	 */
+	// 禁用验证模式
 	public static final int VALIDATION_NONE = XmlValidationModeDetector.VALIDATION_NONE;
 
 	/**
 	 * Indicates that the validation mode should be detected automatically.
 	 */
+	// 自动获取验证模式
 	public static final int VALIDATION_AUTO = XmlValidationModeDetector.VALIDATION_AUTO;
 
 	/**
 	 * Indicates that DTD validation should be used.
 	 */
+	// DTD验证模式
 	public static final int VALIDATION_DTD = XmlValidationModeDetector.VALIDATION_DTD;
 
 	/**
 	 * Indicates that XSD validation should be used.
 	 */
+	// XSD验证模式
 	public static final int VALIDATION_XSD = XmlValidationModeDetector.VALIDATION_XSD;
 
 
 	/** Constants instance for this class. */
 	private static final Constants constants = new Constants(XmlBeanDefinitionReader.class);
 
+	/**
+	 * 验证模式。默认为自动模式。
+	 */
 	private int validationMode = VALIDATION_AUTO;
 
 	private boolean namespaceAware = false;
@@ -120,11 +127,51 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 
 	private DocumentLoader documentLoader = new DefaultDocumentLoader();
 
+	/**
+	 * EntityResolver 解析器
+	 * 以下说明来自《Spring 源码深度解析》
+	 *
+	 * 在 loadDocument 方法中涉及一个参数 EntityResolver ，何为EntityResolver？
+	 * 官网这样解释：如果 SAX 应用程序需要实现自定义处理外部实体，则必须实现此接口并使用 setEntityResolver 方法向SAX 驱动器注册一个实例。
+	 * 也就是说，对于解析一个XML，SAX 首先读取该 XML 文档上的声明，根据声明去寻找相应的 DTD 定义，以便对文档进行一个验证。默认的寻找规则，
+	 * 即通过网络（实现上就是声明的DTD的URI地址）来下载相应的DTD声明，并进行认证。下载的过程是一个漫长的过程，而且当网络中断或不可用时，
+	 * 这里会报错，就是因为相应的DTD声明没有被找到的原因。
+	 *
+	 * EntityResolver的作用是项目本身就可以提供一个如何寻找DTD声明的方法，即由程序来实现寻找DTD声明的过程，比如我们将DTD文件放到项目中某处，
+	 * 在实现时直接将此文档读取并返回给 SAX 即可。这样就避免了通过网络来寻找相应的声明。
+	 *
+	 *
+	 * org.xml.sax.EntityResolver 接口，代码如下：
+	 * public interface EntityResolver {
+	 *
+	 *     public abstract InputSource resolveEntity (String publicId, String systemId)
+	 *         throws SAXException, IOException;
+	 *
+	 * }
+	 *
+	 * 接口方法接收两个参数 publicId 和 systemId ，并返回 InputSource 对象。两个参数声明如下：
+	 *
+	 * publicId ：被引用的外部实体的公共标识符，如果没有提供，则返回 null 。
+	 * systemId ：被引用的外部实体的系统标识符。
+	 *
+	 * 这两个参数的实际内容和具体的验证模式的关系如下：
+	 * 1、XSD 验证模式
+	 * 		publicId：null
+	 * 		systemId：http://www.springframework.org/schema/beans/spring-beans.xsd
+	 * 2、DTD 验证模式
+	 * 		publicId：-//SPRING//DTD BEAN 2.0//EN
+	 * 		systemId：http://www.springframework.org/dtd/spring-beans.dtd
+	 *
+	 *
+	 */
 	@Nullable
 	private EntityResolver entityResolver;
 
 	private ErrorHandler errorHandler = new SimpleSaxErrorHandler(logger);
 
+	/**
+	 * XML 验证模式探测器
+	 */
 	private final XmlValidationModeDetector validationModeDetector = new XmlValidationModeDetector();
 
 	/**
@@ -260,13 +307,16 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * Return the EntityResolver to use, building a default resolver
 	 * if none specified.
 	 */
+	// 返回指定的解析器，如果没有指定，则构造一个未指定的默认解析器。
 	protected EntityResolver getEntityResolver() {
 		if (this.entityResolver == null) {
 			// Determine default EntityResolver to use.
 			ResourceLoader resourceLoader = getResourceLoader();
+			// 如果 ResourceLoader 不为 null，则根据指定的 ResourceLoader 创建一个 ResourceEntityResolver 对象。
 			if (resourceLoader != null) {
 				this.entityResolver = new ResourceEntityResolver(resourceLoader);
 			}
+			// 如果 ResourceLoader 为 null ，则创建 一个 DelegatingEntityResolver 对象。该 Resolver 委托给默认的 BeansDtdResolver 和 PluggableSchemaResolver 。
 			else {
 				this.entityResolver = new DelegatingEntityResolver(getBeanClassLoader());
 			}
@@ -468,11 +518,47 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * mode, even when something other than {@link #VALIDATION_AUTO} was set.
 	 * @see #detectValidationMode
 	 */
+	/*
+		获取指定资源（xml）的验证模式
+
+		##############################科普分界线start###################################
+		1. DTD 与 XSD 的区别
+			1.1 DTD
+			DTD(Document Type Definition)，即文档类型定义，为 XML 文件的验证机制，属于 XML 文件中组成的一部分。
+			DTD 是一种保证 XML 文档格式正确的有效验证方式，它定义了相关 XML 文档的元素、属性、排列方式、元素的内容类型以及元素的层次结构。
+			其实 DTD 就相当于 XML 中的 “词汇”和“语法”，我们可以通过比较 XML 文件和 DTD 文件 来看文档是否符合规范，元素和标签使用是否正确。
+			要在 Spring 中使用 DTD，需要在 Spring XML 文件头部声明：
+
+			<?xml version="1.0" encoding="UTF-8"?>
+			<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN"  "http://www.springframework.org/dtd/spring-beans.dtd">
+
+			DTD 在一定的阶段推动了 XML 的发展，但是它本身存在着一些缺陷：
+
+			1、它没有使用 XML 格式，而是自己定义了一套格式，相对解析器的重用性较差；而且 DTD 的构建和访问没有标准的编程接口，因而解析器很难简单的解析 DTD 文档。
+			2、DTD 对元素的类型限制较少；同时其他的约束力也叫弱。
+			3、DTD 扩展能力较差。
+			4、基于正则表达式的 DTD 文档的描述能力有限。
+
+			1.2 XSD
+			针对 DTD 的缺陷，W3C 在 2001 年推出 XSD。XSD（XML Schemas Definition）即 XML Schema 语言。XML Schema 本身就是一个 XML文档，使用的是 XML 语法，因此可以很方便的解析 XSD 文档。相对于 DTD，XSD 具有如下优势：
+
+			1、XML Schema 基于 XML ，没有专门的语法。
+			2、XML Schema 可以象其他 XML 文件一样解析和处理。
+			3、XML Schema 比 DTD 提供了更丰富的数据类型。
+			4、XML Schema 提供可扩充的数据模型。
+			5、XML Schema 支持综合命名空间。
+			6、XML Schema 支持属性组。
+
+		##############################科普分界线end#####################################
+	 */
 	protected int getValidationModeForResource(Resource resource) {
+		// <1> 获取指定的验证模式
 		int validationModeToUse = getValidationMode();
+		// 首先，如果手动指定，则直接返回
 		if (validationModeToUse != VALIDATION_AUTO) {
 			return validationModeToUse;
 		}
+		// 其次，自动获取验证模式
 		int detectedMode = detectValidationMode(resource);
 		if (detectedMode != VALIDATION_AUTO) {
 			return detectedMode;
@@ -480,6 +566,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 		// Hmm, we didn't get a clear indication... Let's assume XSD,
 		// since apparently no DTD declaration has been found up until
 		// detection stopped (before finding the document's root tag).
+		// 最后，使用 VALIDATION_XSD 做为默认
 		return VALIDATION_XSD;
 	}
 
@@ -491,6 +578,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * of the {@link #VALIDATION_AUTO} mode.
 	 */
 	protected int detectValidationMode(Resource resource) {
+		// 不可读，抛出 BeanDefinitionStoreException 异常
 		if (resource.isOpen()) {
 			throw new BeanDefinitionStoreException(
 					"Passed-in Resource [" + resource + "] contains an open stream: " +
@@ -499,6 +587,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 					"on your XmlBeanDefinitionReader instance.");
 		}
 
+		// 打开 InputStream 流
 		InputStream inputStream;
 		try {
 			inputStream = resource.getInputStream();
@@ -510,6 +599,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 					"validationMode on your XmlBeanDefinitionReader instance?", ex);
 		}
 
+		// <x> 获取相应的验证模式
 		try {
 			return this.validationModeDetector.detectValidationMode(inputStream);
 		}

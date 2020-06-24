@@ -42,15 +42,33 @@ import org.springframework.lang.Nullable;
  * @since 04.06.2003
  * @see ResourceEntityResolver
  */
+
+/**
+ * 实现 EntityResolver 接口，Spring Bean dtd 解码器，用来从 classpath 或者 jar 文件中加载 dtd 。
+ *
+ */
 public class BeansDtdResolver implements EntityResolver {
-
+	/**
+	 * dtd文件的后缀
+	 */
 	private static final String DTD_EXTENSION = ".dtd";
-
+	/**
+	 * dtd的文件名称
+	 */
 	private static final String DTD_NAME = "spring-beans";
 
 	private static final Log logger = LogFactory.getLog(BeansDtdResolver.class);
 
 
+	/**
+	 * 从这个方法中，我们可以看到，加载DTD类型的BeansDtdResolver#resolveEntity(...)过程，
+	 * 只是对systemId进行了简单的校验（从最后一个 / 开始，内容中是否包含 spring-beans），
+	 * 然后构造一个 InputSource 对象，并设置 publicId、systemId 属性，然后返回。
+	 * @param publicId
+	 * @param systemId
+	 * @return
+	 * @throws IOException
+	 */
 	@Override
 	@Nullable
 	public InputSource resolveEntity(@Nullable String publicId, @Nullable String systemId) throws IOException {
@@ -58,17 +76,22 @@ public class BeansDtdResolver implements EntityResolver {
 			logger.trace("Trying to resolve XML entity with public ID [" + publicId +
 					"] and system ID [" + systemId + "]");
 		}
-
+		// 必须以 .dtd 结尾
 		if (systemId != null && systemId.endsWith(DTD_EXTENSION)) {
+			// 获取最后一个 / 的位置
 			int lastPathSeparator = systemId.lastIndexOf('/');
+			// 获取spring-beans的位置
 			int dtdNameStart = systemId.indexOf(DTD_NAME, lastPathSeparator);
+			// 找到
 			if (dtdNameStart != -1) {
 				String dtdFile = DTD_NAME + DTD_EXTENSION;
 				if (logger.isTraceEnabled()) {
 					logger.trace("Trying to locate [" + dtdFile + "] in Spring jar on classpath");
 				}
 				try {
+					// 创建 ClassPathResource 对象
 					Resource resource = new ClassPathResource(dtdFile, getClass());
+					// 创建 InputSource 对象，并设置 publicId、systemId 属性
 					InputSource source = new InputSource(resource.getInputStream());
 					source.setPublicId(publicId);
 					source.setSystemId(systemId);
@@ -86,6 +109,7 @@ public class BeansDtdResolver implements EntityResolver {
 		}
 
 		// Fall back to the parser's default behavior.
+		// 使用默认行为，从网络上下载
 		return null;
 	}
 
