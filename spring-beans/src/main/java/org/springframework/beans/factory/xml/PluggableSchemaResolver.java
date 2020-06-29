@@ -124,14 +124,16 @@ public class PluggableSchemaResolver implements EntityResolver {
 
 		if (systemId != null) {
 			// 获得 Resource 所在位置
+			// 根据传入的 systemId 获取该 systemId 在本地的路径 resourceLocation
 			String resourceLocation = getSchemaMappings().get(systemId);
-			// 将https前缀转换成http
+			// 将https前缀的url转换成http前缀的url
 			if (resourceLocation == null && systemId.startsWith("https:")) {
 				// Retrieve canonical http schema mapping even for https declaration
 				resourceLocation = getSchemaMappings().get("http:" + systemId.substring(6));
 			}
 			if (resourceLocation != null) {
 				// 创建 ClassPathResource
+				// 根据 resourceLocation ，构造 InputSource 对象。
 				Resource resource = new ClassPathResource(resourceLocation, this.classLoader);
 				try {
 					// 创建 InputSource 对象，并设置 publicId、systemId 属性
@@ -157,7 +159,7 @@ public class PluggableSchemaResolver implements EntityResolver {
 
 	/**
 	 * Load the specified schema mappings lazily.
-	 * 懒加载schema映射，获取一个映射表(systemId 与其在本地的对照关系)
+	 * 延迟加载schema映射，获取一个映射表(systemId 与其在本地的对照关系)
 	 */
 	private Map<String, String> getSchemaMappings() {
 		Map<String, String> schemaMappings = this.schemaMappings;
@@ -176,6 +178,7 @@ public class PluggableSchemaResolver implements EntityResolver {
 						if (logger.isTraceEnabled()) {
 							logger.trace("Loaded schema mappings: " + mappings);
 						}
+						// 将 mappings 初始化到 schemaMappings 中
 						schemaMappings = new ConcurrentHashMap<>(mappings.size());
 						CollectionUtils.mergePropertiesIntoMap(mappings, schemaMappings);
 						this.schemaMappings = schemaMappings;

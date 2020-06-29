@@ -102,10 +102,12 @@ public class DelegatingEntityResolver implements EntityResolver {
 		if (systemId != null) {
 			// DTD 模式
 			if (systemId.endsWith(DTD_SUFFIX)) {
+				// 如果是 DTD 验证模式，则使用 BeansDtdResolver 来进行解析
 				return this.dtdResolver.resolveEntity(publicId, systemId);
 			}
 			// XSD 模式
 			else if (systemId.endsWith(XSD_SUFFIX)) {
+				// 如果是 XSD 验证模式，则使用 PluggableSchemaResolver 来进行解析。
 				return this.schemaResolver.resolveEntity(publicId, systemId);
 			}
 		}

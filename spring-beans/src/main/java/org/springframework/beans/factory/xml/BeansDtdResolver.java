@@ -53,7 +53,7 @@ public class BeansDtdResolver implements EntityResolver {
 	 */
 	private static final String DTD_EXTENSION = ".dtd";
 	/**
-	 * dtd的文件名称
+	 * Spring Bean DTD 的文件名
 	 */
 	private static final String DTD_NAME = "spring-beans";
 
